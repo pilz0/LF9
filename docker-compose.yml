@@ -2,9 +2,6 @@ services:
   ftp_server:
     image: delfer/alpine-ftp-server
     container_name: ftp_server
-    ports:
-      - 21:21
-      - 21000-21010:21000-21010
     volumes:
       # remember to replace /folder_on_disk/ with the path to where you want to store the files on the host machine
       - ./ftp1:/home/user1
@@ -20,24 +17,41 @@ services:
       default:
         ipv4_address: 10.13.12.116
   #        ipv6_address: fd69:acab:1312::116 # Issues with IPv6
-  samba:
+
+  smb:
     image: ghcr.io/servercontainers/samba:latest
-    container_name: samba
+    container_name: smb
     restart: unless-stopped
-    environment:
-      ACCOUNT_user1: garlictomatofood
-      UID_user1: 1000
-      ACCOUNT_user2: garlictomatofood
-      UID_user2: 1002
-      SAMBA_VOLUME_CONFIG_sharename: "[sharename]; path=/shares/location; available = yes; browsable = yes; writable = no; read only = yes; force user = username; public = yes; guest ok = yes"
-    volumes:
-      - /your/data:/shares/location
+    dns:
+      - 10.13.12.69
+      - fd69:acab:1312::69
     ports:
       - 445:445
+      - 137:137
+      - 138:138
+      - 139:139
+    environment:
+      ACCOUNT_user1: user1
+      UID_user1: 1000
+      GROUPS_user1: workgroup
+      ACCOUNT_user2: user2
+      UID_user2: 1002
+      GROUPS_user2: workgroup
+      SAMBA_VOLUME_CONFIG_user1: "[user1_Share]; path=/shares/data/user1; valid users = user1; guest ok = no; read only = no; browseable = no; force group = workgroup"
+      SAMBA_VOLUME_CONFIG_user2: "[user2_Share]; path=/shares/data/user2; valid users = user2; guest ok = no; read only = no; browseable = no; force group = workgroup"
+      SAMBA_VOLUME_CONFIG_public: "[Public]; path=/shares/data/public; valid users = user1, user2; guest ok = no; read only = no; browseable = yes; force group = workgroup"
+    volumes:
+      - ./smb_user1:/shares/data/user1
+      - ./smb_user2:/shares/data/user2
+      - ./smb_public:/shares/data/public
+    networks:
+      default:
+        ipv4_address: 10.13.12.23
+        ipv6_address: fd69:acab:1312::23
 
-  vm_debian_1:
-    image: ghcr.io/pilz0/berufsschule:master
-    container_name: vm_debian_1
+  vm_debian:
+    image: ghcr.io/pilz0/lf9:main
+    container_name: vm_debian
     dns:
       - 10.13.12.69
       - fd69:acab:1312::69
@@ -71,6 +85,7 @@ services:
         ipv6_address: fd69:acab:1312::69
 
   mariadb:
+    container_name: mariadb
     image: docker.io/bitnami/mariadb:11.4
     dns:
       - 10.13.12.69
@@ -87,13 +102,11 @@ services:
         ipv6_address: fd69:acab:1312::50
 
   wordpress:
+    container_name: wordpress
     image: docker.io/bitnami/wordpress-nginx:6
     dns:
       - 10.13.12.69
       - fd69:acab:1312::69
-    ports:
-      - '80:8080'
-      - '443:8443'
     volumes:
       - 'wordpress_data:/bitnami/wordpress'
     depends_on:
@@ -116,8 +129,6 @@ services:
       - 10.13.12.69
       - fd69:acab:1312::69
     restart: unless-stopped
-    ports:
-      - 3000:3000
     volumes:
       - ./datasource_prometheus.yml:/etc/grafana/provisioning/datasources/datasource.yaml
       - ./dashboard_grafana.yml:/etc/grafana/provisioning/dashboards/dashboard.yaml
@@ -129,6 +140,7 @@ services:
         ipv6_address: fd69:acab:1312::99
 
   prometheus:
+    container_name: prometheus
     image: prom/prometheus
     dns:
       - 10.13.12.69
@@ -164,6 +176,7 @@ services:
         ipv6_address: fd69:acab:1312::97
 
   db:
+    container_name: postgres_db
     image: postgres:15-alpine
     environment:
       POSTGRES_DB: wiki
@@ -183,6 +196,7 @@ services:
         ipv6_address: fd69:acab:1312::96
 
   wiki:
+    container_name: wiki
     image: ghcr.io/requarks/wiki:2
     environment:
       DB_TYPE: postgres
@@ -192,8 +206,6 @@ services:
       DB_PASS: wikijsrocks
       DB_NAME: wiki
     restart: unless-stopped
-    ports:
-      - "3080:3000"
     dns:
       - 10.13.12.69
       - fd69:acab:1312::69
