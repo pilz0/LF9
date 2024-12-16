@@ -1,15 +1,9 @@
-# This Dockerfile is used to build an headles vnc image based on Debian
+# This Dockerfile is used to build an headles vnc image with custom tools based on Debian
 
 FROM debian:12
 
-LABEL maintainer="Sven Nierlein sven@consol.de"
-ENV REFRESHED_AT=2024-08-28
-
-LABEL io.k8s.description="Headless VNC Container with Xfce window manager, firefox and chromium" \
-    io.k8s.display-name="Headless VNC Container based on Debian" \
-    io.openshift.expose-services="6901:http,5901:xvnc" \
-    io.openshift.tags="vnc, debian, xfce" \
-    io.openshift.non-scalable=true
+LABEL maintainer="Pilz docker@ketamin.trade"
+ENV REFRESHED_AT=2024-12-16
 
 ## Connection ports for controlling the UI:
 # VNC port:5901
