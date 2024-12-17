@@ -2,6 +2,8 @@
 
 FROM debian:12
 
+LABEL org.opencontainers.image.description This Dockerfile is used to build an headles vnc image with custom tools based on Debian, you can find the Source Code here: https://github.com/pilz0/LF9
+
 LABEL maintainer="Pilz docker@ketamin.trade"
 ENV REFRESHED_AT=2024-12-16
 
