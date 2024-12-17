@@ -69,7 +69,7 @@ services:
 
   unbound:
     container_name: unbound
-    image: "mvance/unbound:latest"
+    image: "mvance/unbound:latest" # comment out for use on ARM64 Systems
   #  image: "mvance/unbound-rpi:latest" # uncomment for use on ARM64 Systems
     dns:
       - 10.13.12.69
