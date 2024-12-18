@@ -1,6 +1,7 @@
 # Doku Lernfeld 9
 
 ## To:do
+Fix multi platform images
 
 ### Priorität 1
 * Wordpress auf Port 80/443
@@ -12,8 +13,6 @@
 * IPv6 auf dem FTP-Server anschauen
 
 ### Priorität 3
-* Custom Debian Image auf ARM64 portieren
-* Verifizieren das Unbound auf ARM64 läuft
 
 ## Vorraussetzungen:
 * Ein Moderner Linux-Computer mit ~4gb RAM, 15gb Speicher und 2 Kernen
@@ -35,19 +34,26 @@
 * ```docker image pull ghcr.io/pilz0/berufsschule:master``` oder ```docker-compose build```
 * ```docker-compose up -d```
 
+## Nutzung auf ARM64
+* Für die Nutzung auf ARM64 (Ampere Altra, Raspberry Pi) muss in der Zeile 72/73 das image für Unbound ausgetauscht werden
+
 ## FTP Server
 * auf dem Port 21 von dem Container ftp_server läuft ein FTP Server
 * Für user1 und user2 wird das Password `garlictomatofood` verwendet
 * Als image wird `delfer/alpine-ftp-server` verwendet
-* Userdata in `./ftp1` und `./ftp2`
+* Benutzerdaten in `./ftp1` und `./ftp2`
 * Doku: [hub.docker.com/r/delfer/alpine-ftp-server](https://hub.docker.com/r/delfer/alpine-ftp-server)
 
 ## VM Debian
 * Container wird in `Dockerfile-vm_debian` definiert
-* Es ist ein Debian image mit Browser, verschiedene Tools und VNC Server
+* Es ist ein Debian image mit Browser, verschiedenen Tools und VNC Server
 * VNC Server läuft auf Port 5901
 * VNC Webui läuft auf Port 6901
 * VNC Passwort ist `vncpassword`
+
+### Wireshark
+* Für die Nutzung von Wireshark muss das Interface mit ``wireshark -i eth0`` spezifiziert werden
+* Auch sollte der VNC Traffic ausgeblendet werden
 
 ## DNS-Server
 * Basis ist Unbound
@@ -64,12 +70,12 @@
 
 ## Wordpress
 * Als Basis wird das Bitnami Wordpress image verwendet
-* Ist nginx und wordpress in einem
+* Ist Nginx und Wordpress in einem Image
 * Läuft auf Port 8080/8443 bzw 80/443
 * User: `user` Password: `bitnami`
 * Daten sind im Docker Volume `wordpress_data`
 * Doku hier: [hub.docker.com/r/bitnami/wordpress](https://hub.docker.com/r/bitnami/wordpress)
-* IP: 10.13.12.42
+* IPv4: 10.13.12.42
 
 ## Grafana
 * Läuft auf Port 3000
@@ -85,7 +91,7 @@
 * Läuft auf Port 9100
 * Läuft im Container aber monitored das Hostsystem
 
-## Mediawiki
+## Wiki
 * Basis ist WikiJS
 * Doku: [docs.requarks.io/install/docker](https://docs.requarks.io/install/docker)
 * Läuft auf Port 3080 bzw 80
@@ -101,3 +107,4 @@
 * Ist ein Github Action Workflow
 * Modifizierte Standart Pipeline von Github
 * Baut das Docker Image und pusht es in die Github Container Registry
+* Es gibt jeweils eine Pipeline für ARM64 und AMD64

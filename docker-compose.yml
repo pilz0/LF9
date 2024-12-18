@@ -50,15 +50,15 @@ services:
         ipv6_address: fd69:acab:1312::23
 
   vm_debian:
-    image: ghcr.io/pilz0/lf9:main
+ #   image: ghcr.io/pilz0/lf9:main
     container_name: vm_debian
     dns:
       - 10.13.12.69
       - fd69:acab:1312::69
     #    Uncomment to build the Image form source
-    #    build:
-    #      context: .
-    #      dockerfile: ./Dockerfile-vm_debian
+    build:
+      context: .
+      dockerfile: ./Dockerfile-vm_debian
     ports:
       - 5901:5901
       - 6901:6901
