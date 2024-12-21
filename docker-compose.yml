@@ -3,7 +3,6 @@ services:
     image: delfer/alpine-ftp-server
     container_name: ftp_server
     volumes:
-      # remember to replace /folder_on_disk/ with the path to where you want to store the files on the host machine
       - ./ftp1:/home/user1
       - ./ftp2:/home/user2
     environment:
@@ -50,7 +49,7 @@ services:
         ipv6_address: fd69:acab:1312::23
 
   vm_debian:
- #   image: ghcr.io/pilz0/lf9:main
+    #   image: ghcr.io/pilz0/lf9:main
     container_name: vm_debian
     dns:
       - 10.13.12.69
@@ -70,7 +69,7 @@ services:
   unbound:
     container_name: unbound
     image: "mvance/unbound:latest" # comment out for use on ARM64 Systems
-  #  image: "mvance/unbound-rpi:latest" # uncomment for use on ARM64 Systems
+    #  image: "mvance/unbound-rpi:latest" # uncomment for use on ARM64 Systems
     dns:
       - 10.13.12.69
       - fd69:acab:1312::69

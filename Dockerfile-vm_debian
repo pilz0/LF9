@@ -9,7 +9,7 @@ ENV REFRESHED_AT=2024-12-16
 
 ## Connection ports for controlling the UI:
 # VNC port:5901
-# noVNC webport, connect via http://IP:6901/?password=vncpassword
+# noVNC webport, connect via http://localhost:6901/?password=vncpassword
 ENV DISPLAY=:1 \
     VNC_PORT=5901 \
     NO_VNC_PORT=6901
@@ -55,6 +55,7 @@ RUN $INST_SCRIPTS/libnss_wrapper.sh
 ADD ./src/common/scripts $STARTUPDIR
 RUN $INST_SCRIPTS/set_user_permission.sh $STARTUPDIR $HOME
 
+# wireshark wasnt working without root
 USER 0
 
 ENTRYPOINT ["/dockerstartup/vnc_startup.sh"]

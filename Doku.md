@@ -24,14 +24,14 @@ Fix multi platform images
 
 ## Ausführen:
 * Auf Debian/Ubuntu: ```sudo apt install docker docker-compose git```
-* ```git clone https://github.com/pilz0/Berufsschule.git```
-* ```cd Berufsschule/LF9```
+* ```git clone https://github.com/pilz0/LF9```
+* ```cd LF9```
 * ```docker-compose up -d```
 
 ## Updates machen:
 * ```docker-compose down```
 * ```git pull```
-* ```docker image pull ghcr.io/pilz0/berufsschule:master``` oder ```docker-compose build```
+* ```docker image pull ghcr.io/pilz0/LF9:master``` oder ```docker-compose build```
 * ```docker-compose up -d```
 
 ## Nutzung auf ARM64
@@ -107,4 +107,3 @@ Fix multi platform images
 * Ist ein Github Action Workflow
 * Modifizierte Standart Pipeline von Github
 * Baut das Docker Image und pusht es in die Github Container Registry
-* Es gibt jeweils eine Pipeline für ARM64 und AMD64
