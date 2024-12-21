@@ -16,7 +16,7 @@ ENV DISPLAY=:1 \
 EXPOSE $VNC_PORT $NO_VNC_PORT
 
 ### Install some tools
-RUN apt update -y && apt install --no-install-recommends apt-transport-https zsh sudo firefox-esr bird wireguard-tools busybox filezilla iputils-tracepath iputils-ping bash xfce4 xfce4-goodies tightvncserver dbus-x11 xfonts-base wireshark smbclient fail2ban speedtest-cli gpg neofetch tmux btop htop nmap curl wget git unattended-upgrades prometheus-node-exporter apt-listchanges -y
+RUN apt update -y && apt install --no-install-recommends apt-transport-https zsh firefox-esr wireguard-tools busybox filezilla iputils-tracepath iputils-ping xfce4 xfce4-goodies tightvncserver dbus-x11 xfonts-base wireshark smbclient speedtest-cli gpg neofetch tmux btop htop nmap curl wget git unattended-upgrades apt-listchanges -y
 
 ### Envrionment config
 ENV HOME=/headless \
