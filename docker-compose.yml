@@ -30,15 +30,15 @@ services:
       - 138:138
       - 139:139
     environment:
-      ACCOUNT_user1: user1
+      ACCOUNT_user1: garlictomatofood
       UID_user1: 1000
       GROUPS_user1: workgroup
-      ACCOUNT_user2: user2
+      ACCOUNT_user2: garlictomatofood
       UID_user2: 1002
       GROUPS_user2: workgroup
-      SAMBA_VOLUME_CONFIG_user1: "[user1_Share]; path=/shares/data/user1; valid users = user1; guest ok = no; read only = no; browseable = no; force group = workgroup"
-      SAMBA_VOLUME_CONFIG_user2: "[user2_Share]; path=/shares/data/user2; valid users = user2; guest ok = no; read only = no; browseable = no; force group = workgroup"
-      SAMBA_VOLUME_CONFIG_public: "[Public]; path=/shares/data/public; valid users = user1, user2; guest ok = no; read only = no; browseable = yes; force group = workgroup"
+      SAMBA_VOLUME_CONFIG_user1: "[user1_Share]; path=/shares/data/user1; valid users = user1; guest ok = yes; read only = no; browseable = yes"
+      SAMBA_VOLUME_CONFIG_user2: "[user2_Share]; path=/shares/data/user2; valid users = user2; guest ok = yes; read only = no; browseable = yes"
+      SAMBA_VOLUME_CONFIG_public: "[Public]; path=/shares/data/public; valid users = user1, user2; guest ok = no; read only = no; browseable = yes"
     volumes:
       - ./smb_user1:/shares/data/user1
       - ./smb_user2:/shares/data/user2
@@ -49,7 +49,7 @@ services:
         ipv6_address: fd69:acab:1312::23
 
   vm_debian:
-    #   image: ghcr.io/pilz0/lf9:main
+    image: ghcr.io/pilz0/lf9:main
     container_name: vm_debian
     dns:
       - 10.13.12.69
