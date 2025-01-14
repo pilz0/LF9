@@ -24,6 +24,8 @@ Der RETR-Befehl wird verwendet, um eine Datei vom Server auf den Client herunter
 ### STOR:
 Im Gegensatz zu RETR wird der STOR-Befehl verwendet, um eine Datei vom Client auf den Server hochzuladen. Der Client gibt den Namen der Datei an, die er hochladen möchte, und der Server empfängt die Datei über die Datenverbindung.
 
+<div style="page-break-after: always;"></div>
+
 ## Protokollanalyse
 ![Wireshark Screenshot](./res/image.png)
 
