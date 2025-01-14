@@ -5,7 +5,6 @@ Fix multi platform images
 
 ### Priorität 1
 * Wordpress auf Port 80/443
-* SMB-Server und Client implementieren
 * Netzplan neu machen -> Half done -> siehe `LF9.pkt`
 * dev container implementieren
 

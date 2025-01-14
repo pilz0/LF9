@@ -15,7 +15,7 @@ services:
     networks:
       default:
         ipv4_address: 10.13.12.116
-  #        ipv6_address: fd69:acab:1312::116 # Issues with IPv6
+        # ipv6_address: fd69:acab:1312::116 # Issues with IPv6
 
   smb:
     image: ghcr.io/servercontainers/samba:latest
