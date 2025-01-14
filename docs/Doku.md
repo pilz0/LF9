@@ -29,6 +29,8 @@
 * Es exsistiert ein `Public`-Verzeichnis unter `/srv/ftp_pub`, auf das beide Benutzer zugreifen können.
 * Doku: [hub.docker.com/r/delfer/alpine-ftp-server](https://hub.docker.com/r/delfer/alpine-ftp-server)
 
+<div style="page-break-after: always;"></div>
+
 ## VM Debian
 * Container wird in `Dockerfile-vm_debian` definiert
 * Es ist ein Debian image mit Browser, verschiedenen Tools und VNC Server.
@@ -64,6 +66,8 @@
 * Daten sind im Docker Volume `wordpress_data`
 * Doku hier: [hub.docker.com/r/bitnami/wordpress](https://hub.docker.com/r/bitnami/wordpress)
 
+<div style="page-break-after: always;"></div>
+
 ## Grafana
 * Es wurde sich für Grafana entschieden, da dies eine häufig verwendete Software für Netzwerkmonitoring ist, die auch ein provisioning feature hat.
 * Storage ist im Docker Volume `grafana_storage`
@@ -85,6 +89,8 @@
 * Doku: [docs.requarks.io/install/docker](https://docs.requarks.io/install/docker)
 * Daten liegen in `wiki_data`
 * Datenbank ist eine Postgesql, da dies von WikiJS empfohlen wird. 
+
+<div style="page-break-after: always;"></div>
 
 ## Netzwerk
 * Ist ein Docker Bridge Netzwerk
