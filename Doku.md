@@ -104,9 +104,10 @@
 | Node-exporter | node-exporter.local | 10.13.12.97 | fd69:acab:1312::97 | 9100 |
 | Postgres | db.local | 10.13.12.96 | fd69:acab:1312::96 | 5432 |
 | WikiJS | wiki.local | 10.13.12.75 | fd69:acab:1312::75 | 80 |
-| Samaba | smb.local | 10.13.12.23 | fd69:acab:1312::23 | 445 |
+| Samba | smb.local | 10.13.12.23 | fd69:acab:1312::23 | 445 |
 
 ## Github-CD
+* Wir haben uns für eine CD-Pipeline auf Github entschieden, da wir uns nicht darum kümmern wollen, einen CI/CD-Runner selber zu hosten und so auch Netzwerkbandbreite und Rechenleistung auf eigener on-premise-hardware sparen.
 * Ist ein Github Action Workflow
 * Modifizierte Standart Pipeline von Github
 * Baut das Docker Image und pusht es in die Github Container Registry
