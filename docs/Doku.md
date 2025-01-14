@@ -61,7 +61,6 @@
 * Es wurde sich für Wordpress und NGINX entschieden, da dies eine häufig verwendete Softwarekombination ist.
 * Als Basis wird das Bitnami Wordpress image verwendet, da dieses NGINX und Wordpress integriert.
 * Ist Nginx und Wordpress in einem Image
-* Läuft auf Port 8080/8443 bzw 80/443
 * User: `user` Password: `bitnami`
 * Daten sind im Docker Volume `wordpress_data`
 * Doku hier: [hub.docker.com/r/bitnami/wordpress](https://hub.docker.com/r/bitnami/wordpress)
