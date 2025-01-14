@@ -23,7 +23,7 @@ jobs:
           output_dir: pdfs
           images_dir: docs/res
           # for example <img src="./images/file-name.png">
-          image_import: docs/res
+          image_import: ./res
           build_html: false
       - uses: actions/upload-artifact@v3
         with:
