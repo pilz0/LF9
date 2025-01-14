@@ -5,9 +5,10 @@ services:
     volumes:
       - ./ftp1:/home/user1
       - ./ftp2:/home/user2
+      - ./ftp_pub:/srv/ftp_pub
     environment:
       - ADRESS=ftp.local
-      - USERS=user1|garlictomatofood|/home/user1|1000 user2|garlictomatofood|/home/user2|1002
+      - USERS=user1|garlictomatofood|/home/user1|1000 user2|garlictomatofood|/home/user2|1002 # In this string the ftp-users are configured
     restart: always
     dns:
       - 10.13.12.69
@@ -24,22 +25,18 @@ services:
     dns:
       - 10.13.12.69
       - fd69:acab:1312::69
-    ports:
-      - 445:445
-      - 137:137
-      - 138:138
-      - 139:139
     environment:
-      ACCOUNT_user1: garlictomatofood
+      ACCOUNT_user1: garlictomatofood # The key of the value is the password
       UID_user1: 1000
       GROUPS_user1: workgroup
-      ACCOUNT_user2: garlictomatofood
+      ACCOUNT_user2: garlictomatofood # The key of the value is the password
       UID_user2: 1002
       GROUPS_user2: workgroup
-      SAMBA_VOLUME_CONFIG_user1: "[user1_Share]; path=/shares/data/user1; valid users = user1; guest ok = yes; read only = no; browseable = yes"
-      SAMBA_VOLUME_CONFIG_user2: "[user2_Share]; path=/shares/data/user2; valid users = user2; guest ok = yes; read only = no; browseable = yes"
-      SAMBA_VOLUME_CONFIG_public: "[Public]; path=/shares/data/public; valid users = user1, user2; guest ok = no; read only = no; browseable = yes"
+      SAMBA_VOLUME_CONFIG_user1: "[user1_Share]; path=/shares/data/user1; valid users = user1; guest ok = yes; read only = no; browseable = yes" # The Share for the user1
+      SAMBA_VOLUME_CONFIG_user2: "[user2_Share]; path=/shares/data/user2; valid users = user2; guest ok = yes; read only = no; browseable = yes" # The share for the user2 
+      SAMBA_VOLUME_CONFIG_public: "[Public]; path=/shares/data/public; valid users = user1, user2; guest ok = no; read only = no; browseable = yes" # Public share
     volumes:
+      # Mounting the shares
       - ./smb_user1:/shares/data/user1
       - ./smb_user2:/shares/data/user2
       - ./smb_public:/shares/data/public
@@ -55,9 +52,9 @@ services:
       - 10.13.12.69
       - fd69:acab:1312::69
     #    Uncomment to build the Image form source
-    build:
-      context: .
-      dockerfile: ./Dockerfile-vm_debian
+    #    build:
+    #      context: .
+    #      dockerfile: ./Dockerfile-vm_debian
     ports:
       - 5901:5901
       - 6901:6901
@@ -76,8 +73,8 @@ services:
     expose:
       - "53"
     volumes:
-      - ./a-records.conf:/opt/unbound/etc/unbound/a-records.conf:ro
-      - ./forward-records.conf:/opt/unbound/etc/unbound/forward-records.conf:ro
+      - ./a-records.conf:/opt/unbound/etc/unbound/a-records.conf:ro # mount the config read only inside the container
+      - ./forward-records.conf:/opt/unbound/etc/unbound/forward-records.conf:ro # mount the config read only inside the container
     restart: unless-stopped
     networks:
       default:
@@ -112,7 +109,7 @@ services:
     depends_on:
       - mariadb
     environment:
-      - ALLOW_EMPTY_PASSWORD=yes
+      - ALLOW_EMPTY_PASSWORD=yes # i wouldnt do this in production, but there wasnt any security requierment
       - WORDPRESS_DATABASE_HOST=mariadb.local
       - WORDPRESS_DATABASE_PORT_NUMBER=3306
       - WORDPRESS_DATABASE_USER=bn_wordpress
@@ -130,7 +127,7 @@ services:
       - fd69:acab:1312::69
     restart: unless-stopped
     volumes:
-      - ./datasource_prometheus.yml:/etc/grafana/provisioning/datasources/datasource.yaml
+      - ./datasource_prometheus.yml:/etc/grafana/provisioning/datasources/datasource.yaml # Provision Grafana so you dont have to configure it manually (more doku about that: https://grafana.com/docs/grafana/latest/administration/provisioning/)
       - ./dashboard_grafana.yml:/etc/grafana/provisioning/dashboards/dashboard.yaml
       - ./node_exporter_dashboard.json:/etc/grafana/provisioning/dashboards/node_exporter_dashboard.json
       - 'grafana_storage:/var/lib/grafana'
@@ -146,7 +143,7 @@ services:
       - 10.13.12.69
       - fd69:acab:1312::69
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml # Prometheus config for scraping node-exporter
     networks:
       default:
         ipv4_address: 10.13.12.98
@@ -160,7 +157,7 @@ services:
       - 10.13.12.69
       - fd69:acab:1312::69
     volumes:
-      - /proc:/host/proc:ro
+      - /proc:/host/proc:ro # some paths need to be mounted for node-exporter to work, https://github.com/prometheus/node_exporter?tab=readme-ov-file#docker
       - /sys:/host/sys:ro
       - /:/rootfs:ro
     command:
@@ -180,7 +177,7 @@ services:
     image: postgres:15-alpine
     environment:
       POSTGRES_DB: wiki
-      POSTGRES_PASSWORD: wikijsrocks
+      POSTGRES_PASSWORD: wikijsrocks # dont do this in productions
       POSTGRES_USER: wikijs
     logging:
       driver: "none"
@@ -197,7 +194,7 @@ services:
 
   wiki:
     container_name: wiki
-    image: ghcr.io/requarks/wiki:2
+    image: ghcr.io/requarks/wiki:2 # WikiJS
     environment:
       DB_TYPE: postgres
       DB_HOST: db

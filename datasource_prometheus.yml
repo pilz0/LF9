@@ -28,7 +28,7 @@ datasources:
     # <string> Sets a custom UID to reference this
     # data source in other parts of the configuration.
     # If not specified, Grafana generates one.
-    uid: e68e5107-0b44-4438-870c-019649e85d2b
+    uid: e68e5107-0b44-4438-870c-019649e85d2b # Setting a static uid, so the Dashboard just works
     # <string> Sets the data source's URL, including the
     # port.
     url: http://prometheus.local:9090
