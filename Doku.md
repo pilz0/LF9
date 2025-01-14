@@ -2,7 +2,6 @@
 
 ## Vorraussetzungen:
 * Ein Moderner Linux-Computer mit ~4gb RAM, 15gb Speicher und 2 Kernen
-* Eventuell geht auch Windows (Ungetestet)
 * Docker
 * Docker-compose
 * Git
