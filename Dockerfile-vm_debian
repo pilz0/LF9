@@ -1,0 +1,62 @@
+# This Dockerfile is used to build an headles vnc image with custom tools based on Debian
+
+FROM debian:12
+
+LABEL org.opencontainers.image.description This Dockerfile is used to build an headles vnc image with custom tools based on Debian, you can find the Source Code here: https://github.com/pilz0/LF9
+
+LABEL maintainer="Pilz docker@ketamin.trade"
+ENV REFRESHED_AT=2024-12-16
+
+## Connection ports for controlling the UI:
+# VNC port:5901
+# noVNC webport, connect via http://localhost:6901/?password=vncpassword
+ENV DISPLAY=:1 \
+    VNC_PORT=5901 \
+    NO_VNC_PORT=6901
+EXPOSE $VNC_PORT $NO_VNC_PORT
+
+### Install some tools
+RUN apt update -y && apt install --no-install-recommends apt-transport-https zsh nautilus firefox-esr wireguard-tools busybox filezilla iputils-tracepath iputils-ping xfce4 xfce4-goodies tightvncserver dbus-x11 xfonts-base wireshark smbclient speedtest-cli gpg neofetch tmux btop htop nmap curl wget git unattended-upgrades apt-listchanges -y
+
+### Envrionment config
+ENV HOME=/headless \
+    TERM=xterm \
+    STARTUPDIR=/dockerstartup \
+    INST_SCRIPTS=/headless/install \
+    NO_VNC_HOME=/headless/noVNC \
+    DEBIAN_FRONTEND=noninteractive \
+    VNC_COL_DEPTH=24 \
+    VNC_RESOLUTION=1280x1024 \
+    VNC_PW=vncpassword \
+    VNC_VIEW_ONLY=false
+WORKDIR $HOME
+
+### Add all install scripts for further steps
+ADD ./src/common/install/ $INST_SCRIPTS/
+ADD ./src/debian/install/ $INST_SCRIPTS/
+
+### Install some common tools
+RUN $INST_SCRIPTS/tools.sh
+ENV LANG='de_DE.UTF-8' LANGUAGE='de_DE:de' LC_ALL='de_DE.UTF-8'
+
+### Install custom fonts
+RUN $INST_SCRIPTS/install_custom_fonts.sh
+
+### Install xvnc-server & noVNC - HTML5 based VNC viewer
+RUN $INST_SCRIPTS/tigervnc.sh
+RUN $INST_SCRIPTS/no_vnc.sh
+
+### Install xfce UI
+RUN $INST_SCRIPTS/xfce_ui.sh
+ADD ./src/common/xfce/ $HOME/
+
+### configure startup
+RUN $INST_SCRIPTS/libnss_wrapper.sh
+ADD ./src/common/scripts $STARTUPDIR
+RUN $INST_SCRIPTS/set_user_permission.sh $STARTUPDIR $HOME
+
+# wireshark wasnt working without root
+USER 0
+
+ENTRYPOINT ["/dockerstartup/vnc_startup.sh"]
+CMD ["--wait"]

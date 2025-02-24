@@ -1,0 +1,229 @@
+services:
+  ftp_server:
+    image: delfer/alpine-ftp-server
+    container_name: ftp_server
+    volumes:
+      - ./ftp1:/home/user1
+      - ./ftp2:/home/user2
+      - ./ftp_pub:/srv/ftp_pub
+    environment:
+      - ADRESS=ftp.local
+      - USERS=user1|garlictomatofood|/home/user1|1000 user2|garlictomatofood|/home/user2|1002 # In this string the ftp-users are configured
+    restart: always
+    dns:
+      - 10.13.12.69
+    #    - fd69:acab:1312::69 # Issues with IPv6
+    networks:
+      default:
+        ipv4_address: 10.13.12.116
+        # ipv6_address: fd69:acab:1312::116 # Issues with IPv6
+
+  smb:
+    image: ghcr.io/servercontainers/samba:latest
+    container_name: smb
+    restart: unless-stopped
+    dns:
+      - 10.13.12.69
+      - fd69:acab:1312::69
+    environment:
+      ACCOUNT_Benutzer1: garlictomatofood # The key of the value is the password
+      UID_user1: 1000
+      GROUPS_Benutzer1: workgroup
+      ACCOUNT_Benutzer2: garlictomatofood # The key of the value is the password
+      UID_Benutzer2: 1002
+      GROUPS_user2: workgroup
+      SAMBA_VOLUME_CONFIG_user1: "[Benutzer1_Share]; path=/shares/data/Benutzer1; valid users = Benutzer1; guest ok = yes; read only = no; browseable = yes" # The Share for the user1
+      SAMBA_VOLUME_CONFIG_user2: "[Benutzer2_Share]; path=/shares/data/Benutzer2; valid users = Benutzer2; guest ok = yes; read only = no; browseable = yes" # The share for the user2 
+      SAMBA_VOLUME_CONFIG_public: "[pub]; path=/shares/data/pub; valid users = user1, user2; guest ok = no; read only = no; browseable = yes" # Public share
+    volumes:
+      # Mounting the shares
+      - ./smb_user1:/shares/data/Benutzer1
+      - ./smb_user2:/shares/data/Benutzer2
+      - ./smb_public:/shares/data/pub
+    networks:
+      default:
+        ipv4_address: 10.13.12.23
+        ipv6_address: fd69:acab:1312::23
+
+  vm_debian:
+    image: ghcr.io/pilz0/lf9:main
+    container_name: vm_debian
+    dns:
+      - 10.13.12.69
+      - fd69:acab:1312::69
+    #    Uncomment to build the Image form source
+    #    build:
+    #      context: .
+    #      dockerfile: ./Dockerfile-vm_debian
+    ports:
+      - 5901:5901
+      - 6901:6901
+    networks:
+      default:
+        ipv4_address: 10.13.12.55
+        ipv6_address: fd69:acab:1312::55
+
+  unbound:
+    container_name: unbound
+    image: "mvance/unbound:latest" # comment out for use on ARM64 Systems
+    #  image: "mvance/unbound-rpi:latest" # uncomment for use on ARM64 Systems
+    dns:
+      - 10.13.12.69
+      - fd69:acab:1312::69
+    expose:
+      - "53"
+    volumes:
+      - ./a-records.conf:/opt/unbound/etc/unbound/a-records.conf:ro # mount the config read only inside the container
+      - ./forward-records.conf:/opt/unbound/etc/unbound/forward-records.conf:ro # mount the config read only inside the container
+    restart: unless-stopped
+    networks:
+      default:
+        ipv4_address: 10.13.12.69
+        ipv6_address: fd69:acab:1312::69
+
+  mariadb:
+    container_name: mariadb
+    image: docker.io/bitnami/mariadb:11.4
+    dns:
+      - 10.13.12.69
+      - fd69:acab:1312::69
+    volumes:
+      - 'mariadb_data:/bitnami/mariadb'
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - MARIADB_USER=bn_wordpress
+      - MARIADB_DATABASE=bitnami_wordpress
+    networks:
+      default:
+        ipv4_address: 10.13.12.50
+        ipv6_address: fd69:acab:1312::50
+
+  wordpress:
+    container_name: wordpress
+    image: docker.io/bitnami/wordpress-nginx:6
+    dns:
+      - 10.13.12.69
+      - fd69:acab:1312::69
+    volumes:
+      - 'wordpress_data:/bitnami/wordpress'
+    depends_on:
+      - mariadb
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes # i wouldnt do this in production, but there wasnt any security requierment
+      - WORDPRESS_DATABASE_HOST=mariadb.local
+      - WORDPRESS_DATABASE_PORT_NUMBER=3306
+      - WORDPRESS_DATABASE_USER=bn_wordpress
+      - WORDPRESS_DATABASE_NAME=bitnami_wordpress
+    networks:
+      default:
+        ipv4_address: 10.13.12.42
+        ipv6_address: fd69:acab:1312::42
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    dns:
+      - 10.13.12.69
+      - fd69:acab:1312::69
+    restart: unless-stopped
+    volumes:
+      - ./datasource_prometheus.yml:/etc/grafana/provisioning/datasources/datasource.yaml # Provision Grafana so you dont have to configure it manually (more doku about that: https://grafana.com/docs/grafana/latest/administration/provisioning/)
+      - ./dashboard_grafana.yml:/etc/grafana/provisioning/dashboards/dashboard.yaml
+      - ./node_exporter_dashboard.json:/etc/grafana/provisioning/dashboards/node_exporter_dashboard.json
+      - 'grafana_storage:/var/lib/grafana'
+    networks:
+      default:
+        ipv4_address: 10.13.12.99
+        ipv6_address: fd69:acab:1312::99
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    dns:
+      - 10.13.12.69
+      - fd69:acab:1312::69
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml # Prometheus config for scraping node-exporter
+    networks:
+      default:
+        ipv4_address: 10.13.12.98
+        ipv6_address: fd69:acab:1312::98
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    dns:
+      - 10.13.12.69
+      - fd69:acab:1312::69
+    volumes:
+      - /proc:/host/proc:ro # some paths need to be mounted for node-exporter to work, https://github.com/prometheus/node_exporter?tab=readme-ov-file#docker
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    expose:
+      - 9100
+    networks:
+      default:
+        ipv4_address: 10.13.12.97
+        ipv6_address: fd69:acab:1312::97
+
+  db:
+    container_name: postgres_db
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: wiki
+      POSTGRES_PASSWORD: wikijsrocks # dont do this in productions
+      POSTGRES_USER: wikijs
+    logging:
+      driver: "none"
+    restart: unless-stopped
+    volumes:
+      - ./wiki_data:/var/lib/postgresql/data
+    dns:
+      - 10.13.12.69
+      - fd69:acab:1312::69
+    networks:
+      default:
+        ipv4_address: 10.13.12.96
+        ipv6_address: fd69:acab:1312::96
+
+  wiki:
+    container_name: wiki
+    image: ghcr.io/requarks/wiki:2 # WikiJS
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: wikijs
+      DB_PASS: wikijsrocks
+      DB_NAME: wiki
+    restart: unless-stopped
+    dns:
+      - 10.13.12.69
+      - fd69:acab:1312::69
+    networks:
+      default:
+        ipv4_address: 10.13.12.75
+        ipv6_address: fd69:acab:1312::75
+
+volumes:
+  grafana_storage: {}
+  mariadb_data:
+    driver: local
+  wordpress_data:
+    driver: local
+
+networks:
+  default:
+    enable_ipv6: true
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.13.12.0/24
+        - subnet: fd69:acab:1312::/64
