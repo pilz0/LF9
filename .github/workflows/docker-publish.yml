@@ -1,4 +1,4 @@
-name: Docker
+name: Docker Build and Security Scan
 
 # This workflow uses actions that are not certified by GitHub.
 # They are provided by a third-party and are governed by
@@ -17,17 +17,38 @@ env:
   # github.repository as <account>/<repo>
   IMAGE_NAME: ${{ github.repository }}
 
-
 jobs:
-  build:
-
+  # Validate Docker Compose configuration
+  validate:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose
+        run: |
+          docker compose config --quiet
+          echo "✅ Docker Compose configuration is valid"
+
+      - name: Check for security issues
+        run: |
+          # Check for hardcoded passwords (basic check)
+          if grep -r "password.*=" --include="*.yml" --include="*.yaml" . | grep -v "PASSWORD" | grep -v "your_secure"; then
+            echo "⚠️ Potential hardcoded passwords found"
+            exit 1
+          fi
+          echo "✅ No obvious hardcoded passwords found"
+
+  build:
+    runs-on: ubuntu-latest
+    needs: validate
     permissions:
       contents: read
       packages: write
       # This is used to complete the identity challenge
       # with sigstore/fulcio when running outside of PRs.
       id-token: write
+      security-events: write  # for uploading SARIF files
 
     steps:
       - name: Checkout repository
@@ -64,6 +85,11 @@ jobs:
         uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
 
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
@@ -72,13 +98,28 @@ jobs:
         uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
         with:
           platforms: "linux/amd64,linux/arm64"
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           context: .
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           file: Dockerfile-vm_debian
+
+      # Run security scan on the image
+      - name: Run Trivy vulnerability scanner
+        if: github.event_name != 'pull_request'
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tags }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        if: github.event_name != 'pull_request'
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
 
       # Sign the resulting Docker image digest except on PRs.
       # This will only write to the public Rekor transparency log when the Docker

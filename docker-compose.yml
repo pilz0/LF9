@@ -7,12 +7,22 @@ services:
       - ./ftp2:/home/user2
       - ./ftp_pub:/srv/ftp_pub
     environment:
-      - ADRESS=ftp.local
-      - USERS=user1|garlictomatofood|/home/user1|1000 user2|garlictomatofood|/home/user2|1002 # In this string the ftp-users are configured
+      - ADDRESS=ftp.local  # Fixed typo: ADRESS -> ADDRESS
+      - USERS=user1|${FTP_PASSWORD:-garlictomatofood}|/home/user1|1000 user2|${FTP_PASSWORD:-garlictomatofood}|/home/user2|1002 # In this string the ftp-users are configured
     restart: always
     dns:
       - 10.13.12.69
     #    - fd69:acab:1312::69 # Issues with IPv6
+    ports:
+      - "20:20"
+      - "21:21"
+      - "21000-21010:21000-21010"  # Passive mode ports
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
     networks:
       default:
         ipv4_address: 10.13.12.116
@@ -26,10 +36,10 @@ services:
       - 10.13.12.69
       - fd69:acab:1312::69
     environment:
-      ACCOUNT_Benutzer1: garlictomatofood # The key of the value is the password
+      ACCOUNT_Benutzer1: ${SMB_PASSWORD:-garlictomatofood} # The key of the value is the password
       UID_user1: 1000
       GROUPS_Benutzer1: workgroup
-      ACCOUNT_Benutzer2: garlictomatofood # The key of the value is the password
+      ACCOUNT_Benutzer2: ${SMB_PASSWORD:-garlictomatofood} # The key of the value is the password
       UID_Benutzer2: 1002
       GROUPS_user2: workgroup
       SAMBA_VOLUME_CONFIG_user1: "[Benutzer1_Share]; path=/shares/data/Benutzer1; valid users = Benutzer1; guest ok = yes; read only = no; browseable = yes" # The Share for the user1
@@ -40,6 +50,15 @@ services:
       - ./smb_user1:/shares/data/Benutzer1
       - ./smb_user2:/shares/data/Benutzer2
       - ./smb_public:/shares/data/pub
+    ports:
+      - "139:139"
+      - "445:445"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
     networks:
       default:
         ipv4_address: 10.13.12.23
@@ -83,7 +102,7 @@ services:
 
   mariadb:
     container_name: mariadb
-    image: docker.io/bitnami/mariadb:11.4
+    image: docker.io/bitnami/mariadb:${MARIADB_VERSION:-11.4}
     dns:
       - 10.13.12.69
       - fd69:acab:1312::69
@@ -93,6 +112,12 @@ services:
       - ALLOW_EMPTY_PASSWORD=yes
       - MARIADB_USER=bn_wordpress
       - MARIADB_DATABASE=bitnami_wordpress
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       default:
         ipv4_address: 10.13.12.50
@@ -100,27 +125,36 @@ services:
 
   wordpress:
     container_name: wordpress
-    image: docker.io/bitnami/wordpress-nginx:6
+    image: docker.io/bitnami/wordpress-nginx:${WORDPRESS_VERSION:-6}
     dns:
       - 10.13.12.69
       - fd69:acab:1312::69
     volumes:
       - 'wordpress_data:/bitnami/wordpress'
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_healthy
     environment:
-      - ALLOW_EMPTY_PASSWORD=yes # i wouldnt do this in production, but there wasnt any security requierment
+      - ALLOW_EMPTY_PASSWORD=yes # i wouldnt do this in production, but there wasnt any security requirement
       - WORDPRESS_DATABASE_HOST=mariadb.local
       - WORDPRESS_DATABASE_PORT_NUMBER=3306
       - WORDPRESS_DATABASE_USER=bn_wordpress
       - WORDPRESS_DATABASE_NAME=bitnami_wordpress
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    ports:
+      - "8080:8080"
     networks:
       default:
         ipv4_address: 10.13.12.42
         ipv6_address: fd69:acab:1312::42
 
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana:${GRAFANA_VERSION:-latest}
     container_name: grafana
     dns:
       - 10.13.12.69
@@ -131,6 +165,14 @@ services:
       - ./dashboard_grafana.yml:/etc/grafana/provisioning/dashboards/dashboard.yaml
       - ./node_exporter_dashboard.json:/etc/grafana/provisioning/dashboards/node_exporter_dashboard.json
       - 'grafana_storage:/var/lib/grafana'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    ports:
+      - "3000:3000"
     networks:
       default:
         ipv4_address: 10.13.12.99
@@ -174,10 +216,10 @@ services:
 
   db:
     container_name: postgres_db
-    image: postgres:15-alpine
+    image: postgres:${POSTGRES_VERSION:-15-alpine}
     environment:
       POSTGRES_DB: wiki
-      POSTGRES_PASSWORD: wikijsrocks # dont do this in productions
+      POSTGRES_PASSWORD: ${WIKIJS_DB_PASSWORD:-wikijsrocks} # dont do this in productions
       POSTGRES_USER: wikijs
     logging:
       driver: "none"
@@ -187,6 +229,12 @@ services:
     dns:
       - 10.13.12.69
       - fd69:acab:1312::69
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wikijs -d wiki"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       default:
         ipv4_address: 10.13.12.96
@@ -200,12 +248,23 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       DB_USER: wikijs
-      DB_PASS: wikijsrocks
+      DB_PASS: ${WIKIJS_DB_PASSWORD:-wikijsrocks}
       DB_NAME: wiki
     restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
     dns:
       - 10.13.12.69
       - fd69:acab:1312::69
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    ports:
+      - "3001:3000"  # Changed to avoid conflict with Grafana
     networks:
       default:
         ipv4_address: 10.13.12.75

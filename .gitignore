@@ -1,7 +1,38 @@
+# Database and volume data
 dbdata
 dns
 /*ftp*/
 grafana
 wiki_data
 smb*/
+
+# Environment files (contain sensitive data)
+.env
+
+# Documentation todos
 docs/todo.md
+
+# Docker runtime files
+.docker/
+docker-compose.override.yml
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backup files
+*.bak
+backup.tar.gz
