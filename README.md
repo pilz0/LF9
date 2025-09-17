@@ -158,6 +158,17 @@ Data persistence is handled through Docker volumes:
 - `wordpress_data`: WordPress files
 - `./wiki_data`: PostgreSQL data (bind mount)
 
+### Environment Variables
+
+Key environment variables that can be customized in `docker-compose.yml`:
+
+| Service | Variable | Default | Description |
+|---------|----------|---------|-------------|
+| FTP | USERS | user1\|garlictomatofood\|... | FTP user configuration |
+| Samba | ACCOUNT_Benutzer1 | garlictomatofood | Samba user password |
+| MariaDB | MARIADB_DATABASE | bitnami_wordpress | Database name |
+| PostgreSQL | POSTGRES_PASSWORD | wikijsrocks | Database password |
+
 ## 🚨 Troubleshooting
 
 ### Common Issues
@@ -187,7 +198,7 @@ docker-compose up -d
 ## 📚 Additional Documentation
 
 - [German Documentation](./Doku.md) - Detailed German documentation
-- [Network Diagram](./docs/Netzplan.svg) - Visual network overview
+- [Network Diagram](./docs/res/Netzplan.svg) - Visual network overview
 - [Project Structure](./docs/Projektstrukturdiagramm.svg) - Project structure diagram
 
 ## 🤝 Contributing

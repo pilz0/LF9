@@ -193,3 +193,31 @@ docker-compose up -d
 - Services sind ohne Authentifizierung exponiert
 
 **Nicht in Produktionsumgebungen ohne ordnungsgemäße Sicherheitshärtung verwenden.**
+
+## Konfiguration und Anpassungen
+
+### DNS-Konfiguration
+- A-Records: Bearbeitung in `a-records.conf`
+- Forward-Records: Bearbeitung in `forward-records.conf`
+
+### Monitoring-Konfiguration
+- Prometheus: `prometheus.yml`
+- Grafana-Dashboards: `node_exporter_dashboard.json`
+
+### Datenablage
+Daten werden durch Docker Volumes persistent gespeichert:
+- `grafana_storage`: Grafana-Daten
+- `mariadb_data`: MariaDB-Datenbank
+- `wordpress_data`: WordPress-Dateien
+- `./wiki_data`: PostgreSQL-Daten (Bind Mount)
+
+### Umgebungsvariablen
+
+Wichtige Umgebungsvariablen, die in `docker-compose.yml` angepasst werden können:
+
+| Service | Variable | Standard | Beschreibung |
+|---------|----------|----------|--------------|
+| FTP | USERS | user1\|garlictomatofood\|... | FTP-Benutzerkonfiguration |
+| Samba | ACCOUNT_Benutzer1 | garlictomatofood | Samba-Benutzerpasswort |
+| MariaDB | MARIADB_DATABASE | bitnami_wordpress | Datenbankname |
+| PostgreSQL | POSTGRES_PASSWORD | wikijsrocks | Datenbankpasswort |

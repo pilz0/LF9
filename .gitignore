@@ -1,7 +1,35 @@
+# Data directories
 dbdata
 dns
 /*ftp*/
 grafana
 wiki_data
 smb*/
+
+# Documentation
 docs/todo.md
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker
+.env.local
+.env.*.local
+
+# Backup files
+*.bak
+*.backup
