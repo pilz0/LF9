@@ -122,5 +122,23 @@
 ## Github-CD
 * Wir haben uns für eine CD-Pipeline auf Github entschieden, da wir uns nicht darum kümmern wollen, einen CI/CD-Runner selber zu hosten und so auch Netzwerkbandbreite und Rechenleistung auf eigener on-premise-hardware sparen.
 * Ist ein Github Action Workflow
-* Modifizierte Standart Pipeline von Github
+* **Erweiterte Pipeline**: Die neue `enhanced-ci-cd.yml` Pipeline bietet umfassende Validierung, Sicherheitschecks und Qualitätssicherung
 * Baut das Docker Image und pusht es in die Github Container Registry
+* **Neue Features**:
+  - Automatische Validierung der Docker Compose Konfiguration
+  - Sicherheitsscans mit Trivy und Hadolint
+  - Code-Qualitätsprüfungen mit ShellCheck und yamllint
+  - Integrationstests für Service-Kommunikation
+  - Multi-Architektur Builds (AMD64 + ARM64)
+  - Container-Signierung mit Cosign
+  - Post-Deployment Verifikation
+
+### Testing Framework
+* **Umfassende Testsuite** in `tests/` Verzeichnis
+* **Validierungsscripts**: 
+  - `validate-compose.sh` - Docker Compose Konfigurationsvalidierung
+  - `security-check.sh` - Sicherheitsaudit für Container und Konfigurationen
+  - `quality-check.sh` - Code-Qualität und Linting
+  - `integration-test.sh` - Integrationstests für Service-Kommunikation
+  - `run-all-tests.sh` - Master-Testrunner für alle Tests
+* **Automatische Abhängigkeitsupdates** mit erweiteter Dependabot-Konfiguration für Docker Images und GitHub Actions

@@ -1,0 +1,51 @@
+version: '3.8'
+
+# Test configuration for validating Docker Compose setup
+# This uses a minimal subset of services for testing
+
+services:
+  # Test DNS server
+  unbound-test:
+    container_name: unbound-test
+    image: "mvance/unbound:latest"
+    expose:
+      - "53"
+    volumes:
+      - ../a-records.conf:/opt/unbound/etc/unbound/a-records.conf:ro
+      - ../forward-records.conf:/opt/unbound/etc/unbound/forward-records.conf:ro
+    restart: "no"
+    networks:
+      test-net:
+        ipv4_address: 10.13.13.69
+
+  # Test database
+  mariadb-test:
+    container_name: mariadb-test
+    image: docker.io/bitnami/mariadb:11.4
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - MARIADB_USER=test_user
+      - MARIADB_DATABASE=test_db
+    restart: "no"
+    networks:
+      test-net:
+        ipv4_address: 10.13.13.50
+
+  # Test VM container (built image)
+  vm-debian-test:
+    container_name: vm-debian-test
+    image: ghcr.io/pilz0/lf9:main
+    environment:
+      - VNC_PW=testpassword
+    restart: "no"
+    networks:
+      test-net:
+        ipv4_address: 10.13.13.55
+
+networks:
+  test-net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.13.13.0/24

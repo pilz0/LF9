@@ -1,0 +1,245 @@
+name: Enhanced CI/CD Pipeline
+
+# This workflow builds and tests the LF9 Docker application
+# with comprehensive validation, security checks, and quality assurance
+
+on:
+  push:
+    branches: [ "main", "v1" ]
+  pull_request:
+    branches: [ "main", "v1" ]
+
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Job 1: Validation and Quality Checks
+  validate-and-test:
+    name: Validation & Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install testing dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck yamllint bc
+
+      - name: Run validation tests
+        run: ./tests/run-all-tests.sh --validation-only
+
+      - name: Run security checks
+        run: ./tests/run-all-tests.sh --security-only
+
+      - name: Run quality checks
+        run: ./tests/run-all-tests.sh --quality-only
+
+      - name: Generate test report
+        if: always()
+        run: |
+          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Validation completed" >> $GITHUB_STEP_SUMMARY
+          echo "🔒 Security checks completed" >> $GITHUB_STEP_SUMMARY
+          echo "🎯 Quality checks completed" >> $GITHUB_STEP_SUMMARY
+
+  # Job 2: Integration Tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: validate-and-test
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build test image locally
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile-vm_debian
+          push: false
+          tags: ghcr.io/pilz0/lf9:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run integration tests
+        run: |
+          # Update test compose to use locally built image
+          sed -i 's|ghcr.io/pilz0/lf9:main|ghcr.io/pilz0/lf9:test|g' tests/docker-compose.test.yml
+          ./tests/integration-test.sh
+
+  # Job 3: Security Scanning
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    needs: validate-and-test
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run Hadolint Dockerfile linter
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile-vm_debian
+          format: sarif
+          output-file: hadolint-results.sarif
+          no-fail: true
+
+      - name: Upload Hadolint scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: hadolint-results.sarif
+
+  # Job 4: Build and Push Docker Image
+  build-and-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: [validate-and-test, integration-tests, security-scan]
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Install the cosign tool except on PR
+      - name: Install cosign
+        if: github.event_name != 'pull_request'
+        uses: sigstore/cosign-installer@v3.5.0
+        with:
+          cosign-release: 'v2.2.4'
+
+      # Set up BuildKit Docker container builder to be able to build
+      # multi-platform images and export cache
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Login against a Docker registry except on PR
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Extract metadata (tags, labels) for Docker
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # Build and push Docker image with Buildx (don't push on PR)
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v5
+        with:
+          platforms: "linux/amd64,linux/arm64"
+          push: ${{ github.event_name != 'pull_request' }}
+          context: .
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          file: Dockerfile-vm_debian
+
+      # Sign the resulting Docker image digest except on PRs
+      - name: Sign the published Docker image
+        if: ${{ github.event_name != 'pull_request' }}
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ steps.build-and-push.outputs.digest }}
+        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+
+      # Scan the built image for vulnerabilities
+      - name: Run Trivy vulnerability scanner on image
+        if: github.event_name != 'pull_request'
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-image-results.sarif'
+
+      - name: Upload image scan results
+        if: github.event_name != 'pull_request'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-image-results.sarif'
+
+  # Job 5: Post-deployment verification
+  post-deployment:
+    name: Post-deployment Verification
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.event_name != 'pull_request'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify image can be pulled
+        run: |
+          echo "Verifying image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Basic smoke test
+        run: |
+          echo "Running basic smoke test..."
+          docker run --rm -d --name smoke-test \
+            -e VNC_PW=testpass \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          
+          # Wait a bit for container to start
+          sleep 10
+          
+          # Check if container is running
+          if docker ps | grep -q smoke-test; then
+            echo "✅ Smoke test passed - container started successfully"
+            docker stop smoke-test
+          else
+            echo "❌ Smoke test failed - container did not start"
+            docker logs smoke-test || true
+            exit 1
+          fi
+
+      - name: Generate deployment summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Platforms**: linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Status**: ✅ Success" >> $GITHUB_STEP_SUMMARY
+          echo "- **Security Scan**: ✅ Completed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Smoke Test**: ✅ Passed" >> $GITHUB_STEP_SUMMARY
