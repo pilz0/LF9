@@ -2,6 +2,18 @@
 
 *"In the mystical realm of containerized landscapes, where services live in perfect harmony within the great Docker Kingdom, there exists a legendary learning environment known as LF9. This is the epic story of eleven brave digital souls who came together to create the most magnificent educational kingdom ever known..."*
 
+## 🌍 Multilingual Documentation Available!
+
+**This epic tale is now available in 24+ European Union languages!**
+
+🇪🇺 **[Access All Languages](docs/i18n/README.md)** - Complete translations in Bulgarian, Croatian, Czech, Danish, Dutch, English, Estonian, Finnish, French, German, Greek, Hungarian, Irish, Italian, Latvian, Lithuanian, Maltese, Polish, Portuguese, Romanian, Slovak, Slovenian, Spanish, and Swedish!
+
+*Diese epische Geschichte ist jetzt in 24+ Sprachen der Europäischen Union verfügbar!*
+
+*Тази епична история сега е достъпна на 24+ езика на Европейския съюз!*
+
+---
+
 ## 🏰 Prologue: The Birth of a Digital Kingdom
 
 Long ago, in the ethereal realms of Lernfeld 9, the ancient masters of technology foresaw a need for a great educational kingdom where knowledge seekers could learn the arts of modern infrastructure. Thus began the chronicles of LF9 - a tale of eleven extraordinary digital beings, each with unique powers and purposes, who would unite to form the most comprehensive learning environment ever created.
